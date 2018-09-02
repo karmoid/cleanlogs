@@ -26,12 +26,14 @@ Type
   tKindPeriod = (kpDay, kpWeek, kpMonth, kpYear);
   tTaillePLancher = (Kilo=1024, Mega=1024*1024, Tera=1024*1024*1024);
   tOptions = (opRecursif,opExecute,opForce);
+  tPredefinedV = (opTimeStmp, opDate, opHeure, opQuantieme, opJour, opMois, OpAnnee);
 
 const
-  AccessLib : array[tKindAccess] of string = ('création', 'dernier accès', 'modification');
-  PeriodLib : array[tKindPeriod] of string  = ('jour', 'semaine', 'mois', 'année');
+  AccessLib : array[tKindAccess] of string = ('creation', 'dernier acces', 'modification');
+  PeriodLib : array[tKindPeriod] of string  = ('jour', 'semaine', 'mois', 'annee');
   SetOptionsLib : array[tOptions] of string = ('recursif','execute','force');
   ClrOptionsLib : array[tOptions] of string = ('plat','simulation','confirmation');
+  PredefValue : array [tPredefinedv] of string = ('now','date','time', 'dayofyear', 'day', 'month', 'year');
 
 type
   tOptionset = set of tOptions;
@@ -126,7 +128,9 @@ type
     function GetOptionToString: string;
     function getOptionSet: tOptionset;
     procedure SetOptionSet(const Value: tOptionset);
-    procedure SetTraceFile(const value: string);
+    procedure SetTraceFile(const value: TFileName);
+    function ExprimeValue(const Value : string) : string;
+    function pad0(const value : string; const len : integer) : string;
 
   public
     property ListCriteres : TObjectList read fListCriteres;
@@ -142,6 +146,7 @@ type
     procedure ExploitOption(Opt : string);
     function GetValueTraceFile(const value : string) : string;
     function GetValueOptionSet(const value : tOptionSet) : tOptionSet;
+    procedure Test;
   end;
 
 implementation
@@ -246,7 +251,6 @@ end;
 
 function tCritere.AcceptFile(Fic: tFichier): Boolean;
 var Limite : Integer;
-var D,M,Y : Word;
 begin
   case Period of
     kpDay   : Limite := Value;
@@ -445,9 +449,37 @@ begin
   bOptionsFOund := bOptionsFOund + [Index];  
 end;
 
-procedure tTask.SetTraceFile(const value: string);
+function tTask.pad0(const value : string; const len : integer) : string;
 begin
-  fTraceFile := Value;
+  if Length(Value)<len then
+    Result := StringofCHar('0',Len-Length(Value))+Value
+  else
+    result := Value;  
+end;
+
+function tTask.ExprimeValue(const Value : string) : string;
+var Iter : tPredefinedv;
+var D,M,Y : word;
+begin
+  Decodedate(Date,Y,M,D);
+  Result := Value;
+  for iter:=low(tPredefinedv) to high(tPredefinedv) do
+  begin
+    case Iter of
+      opTimeStmp : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',formatdatetime('yyyymmdd_hhnnss',now),[rfReplaceAll,rfIgnoreCase]);   
+      opDate     : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',formatdatetime('yyyymmdd',now),[rfReplaceAll,rfIgnoreCase]);
+      opHeure    : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',formatdatetime('hhnnss',now),[rfReplaceAll,rfIgnoreCase]);
+      opQuantieme: Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',pad0(inttostr(trunc(date)-trunc(encodedate(Y,1,1))),3),[rfReplaceAll,rfIgnoreCase]);
+      opJour     : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',pad0(inttostr(D),2),[rfReplaceAll,rfIgnoreCase]); 
+      opMois     : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',pad0(inttostr(M),2),[rfReplaceAll,rfIgnoreCase]);
+      OpAnnee    : Result := StringReplace(Result,'%'+predefvalue[Iter]+'%',pad0(inttostr(Y),2),[rfReplaceAll,rfIgnoreCase]);
+    end;
+  end;   
+end;
+
+procedure tTask.SetTraceFile(const value: TFileName);
+begin
+  fTraceFile := ExprimeValue(Value);
   bTraceFile := true;
 end;
 
@@ -474,6 +506,12 @@ begin
     if Pos then
       Result := Result + [Indice];  
   end;       
+end;
+
+procedure tTask.Test;
+begin
+  Assert(ExprimeValue('%date%')=ExprimeValue('%year%')+ExprimeValue('%month%')+
+                               ExprimeValue('%day%'));
 end;
 
 

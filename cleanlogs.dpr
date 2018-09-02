@@ -57,8 +57,7 @@ uses
   IniFiles,
   SysUtils,
   windows,
-  paszlib,
-  Crt,
+//  Crt,
   BaseObjects in 'BaseObjects.pas';
 
 type
@@ -69,6 +68,7 @@ type
 var
   TraceF : string;
   TraceSt : TStrings;
+  ErrorFound : boolean;
 
 const
   ParametersName : array[tParameters] of string = ('tracefile','criteres','options');
@@ -193,7 +193,7 @@ begin
   if Forced=0 then
   begin
     WriteLn('sur le chemin : '+workTask.Path);
-    WriteLn('Òtes vous s–r de vouloir supprimer '+IntToStr(MaListe.Count)+
+    WriteLn('Etes vous sur de vouloir supprimer '+IntToStr(MaListe.Count)+
             ' fichiers pour '+IntToStr(Taille div 1024)+' Kilo Octets ? [O/N] ');
     read(MyChar);
     if (UpCase(MyChar) IN ['O','Y']) then
@@ -207,19 +207,20 @@ end;
 begin
   TraceSt := TStringList.Create;
   try
-    TextColor(Green);
-    write('cleanlogs - Nettoyage p‚riodique des fichiers traces. ');
-    TextColor(Yellow);
-    writeln('V1.01');
-    TextColor(Green);
-    writeln('            Marc Chauffour - Septembre 2006');
+    write('cleanlogs - Nettoyage periodique des fichiers traces. ');
+    writeln('V1.05');
+    writeln('            Marc Chauffour - Dec. 2011');
     writeln;
     Assign(Output,'');
     Rewrite(Output);
     if ParamCount<>1 then
-      GiveHelp()
+	begin
+      GiveHelp();
+	  Halt(1);
+	end  
     else
     begin
+      default := nil;
       try
         Sections := TStringList.Create();
         try
@@ -264,7 +265,7 @@ begin
       finally
       end;
 
-
+	  ErrorFound := False;
       MaListe := TObjectList.Create(True);
       Indice := 0;
       while Indice<default.Count do
@@ -283,7 +284,7 @@ begin
                       ' | Path['+workTask.Path +
                       '] - Options[' + workTask.OptionToString+
                       '] - Extensions['+workCrit.Spec.CommaText+
-                      '] - CritŠres['+WorkCrit.toString+']');
+                      '] - Criteres['+WorkCrit.toString+']');
           while I<workCrit.Spec.Count do
           begin
             NbFiles := NbFiles + LoadFiles(workTask.Path, workCrit.Spec[I]);
@@ -299,7 +300,6 @@ begin
                     '] - TailleKiloOctets['+IntToStr(Taille div 1024)+
                     '] - TailleMegaOctets['+IntToStr(Taille div (1024*1024))+
                     '] - TailleGigaOctets['+IntToStr(Taille div (1024*1024*1024))+']');
-
         Idx := 0;
         Forced := 0;
         while Idx<MaListe.Count do
@@ -315,34 +315,43 @@ begin
                 begin
                   lError := GetLastError;
                   EtatTrt := '!('+IntToStr(lError)+')-'+SysErrorMessage(lError)+'!';
+				  ErrorFound := True;
                 end;
               end
               else
               begin
-                EtatTrt := 'ABANDON UTILISATEUR';
+				EtatTrt := 'ABANDON UTILISATEUR';
+				ErrorFound := True;
               end;
             except on e: Exception do
+			  begin
               EtatTrt := 'ERREUR:'+e.Message;
+			  ErrorFound := True;
+			  end;
             end
           else
             EtatTrt := 'SIMULE';
-          TraceSt.Add(FormatDateTime('dd/mm/yyyy hh:nn:ss',Now)+
-                      ' | NÝ['+IntToStr(MonFichier.ID)+
+			TraceSt.Add(FormatDateTime('dd/mm/yyyy hh:nn:ss',Now)+
+                      ' | No['+IntToStr(MonFichier.ID)+
                       '] - Emplacement['+MonFichier.Path+
                       '] - Fichier['+MonFichier.FileName+
-                      '] - Cr‚ation['+FormatDateTime('dd/mm/yyyy hh:nn:ss',MonFichier.DateCreated)+
+                      '] - Creation['+FormatDateTime('dd/mm/yyyy hh:nn:ss',MonFichier.DateCreated)+
                       '] - Modification['+FormatDateTime('dd/mm/yyyy hh:nn:ss',MonFichier.DateModified)+
-                      '] - DernierAccŠs['+FormatDateTime('dd/mm/yyyy hh:nn:ss',MonFichier.DateAccessed)+
+                      '] - DernierAcces['+FormatDateTime('dd/mm/yyyy hh:nn:ss',MonFichier.DateAccessed)+
                       '] - TailleHR['+MonFichier.TailleToString+
                       '] - KiloOctets['+MonFichier.KiloToString+
                       '] - Action['+EtatTrt+']');
-          Inc(Idx);
+			Inc(Idx);
         end;
         if TraceF<>'' then
           LogTrace;
         inc(Indice);
         MaListe.Clear;
       end;
+	  if ErrorFound then
+		Halt(1)
+	  else
+		Halt(0);
     end;
   finally
     TraceSt.Free;
