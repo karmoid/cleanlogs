@@ -33,23 +33,25 @@ Sample : criteres=(c)+3d[*.log;*.trc] (m)+3w[PY*.tmp]
 
 Name of the logfile.  
 Could contain dynamic value with %keyword% format :  
-now - current timestamp (Date + Time)  
-date - current date  
-time - current time  
-dayofyear - current day of year  
-day - current day  
-month - current month  
-year - current year  
+
+    now - current timestamp (Date + Time)  
+    date - current date  
+    time - current time  
+    dayofyear - current day of year  
+    day - current day  
+    month - current month  
+    year - current year  
 
 **option=value,value**  
 
 List of values in :  
-recursif - process subdirectories (opposite of *plat*)  
-execute - do the process (opposite of *simulation*)  
-force - do not confirm deletion (opposite of *confirmation*)  
-plat - process only directory level (opposite of *recursif*)  
-simulation - do not process files (opposite of *execute*)  
-confirmation - confirm deletion (opposite of *force*)  
+
+    recursif - process subdirectories (opposite of *plat*)  
+    execute - do the process (opposite of *simulation*)  
+    force - do not confirm deletion (opposite of *confirmation*)  
+    plat - process only directory level (opposite of *recursif*)  
+    simulation - do not process files (opposite of *execute*)  
+    confirmation - confirm deletion (opposite of *force*)  
 
 ## Notes  
 
@@ -57,20 +59,20 @@ It's a good uses to put a section to clean logfiles.
 As you can name tracefile whit whatever you want, each run of *cleanlogs* will create a log file o reuse it.   
 if your ini files looks like to :  
 
-[:default]  
-tracefile=E:\Exploit\trace\CleanLogs-%year%%dayofyear%.log  
-options=recursif,execute,force  
+    [:default]  
+    tracefile=E:\Exploit\trace\CleanLogs-%year%%dayofyear%.log  
+    options=recursif,execute,force  
 
-[:override]  
-;options=simulation,confirmation  
+    [:override]  
+    ;options=simulation,confirmation  
 
-[E:\Exploit\Oracle\LOG]  
-criteres=(m)+8d[*.*]  
+    [E:\Exploit\Oracle\LOG]  
+    criteres=(m)+8d[*.*]  
 
 It could be interesting to put also a section with :  
 
-[e:\Exploit\trace]  
-criteres=(m)+5d[*.log]  
+    [e:\Exploit\trace]  
+    criteres=(m)+5d[*.log]  
 
 to clean old logfiles too  
 
