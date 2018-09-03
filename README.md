@@ -19,7 +19,7 @@ Set "override" values for other entries after default and specific values are se
 
 ### section DIRECTORY
 
-set "specific" values for a specific place (local directory or share on UNC format)
+Set "specific" values for a specific place (local directory or share on UNC format)
 
 ### parameters
 
