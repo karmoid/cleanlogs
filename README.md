@@ -3,7 +3,7 @@
 ## Description
 
 Tool to remove old files on directory following some rules.  
-rules are common file specifications (with * and ?) and age values based on Acces, Create and Modified file timestamp.  
+rules are common file specifications (with * and ?) and age values based on Access, Create and Modified file timestamp.  
 
 ## Settings
 
