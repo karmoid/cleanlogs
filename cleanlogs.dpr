@@ -12,29 +12,31 @@ On va passer au programme des spécifications de fichiers du genre
 +3m pour + de 3 mois
 +3y pour + de 3 ans
 
-en paramˆtre on a donc juste besoin de connaitre le nom de fichier
+en parametre on a donc juste besoin de connaitre le nom de fichier
 contenant les paramètres.
 
 (c) pour tester la date de création
 (a) pour tester la date de dernier accès
 (m) pour tester la date de dernière modification
 
-[default]
-tracefile=\\ssiegebabs01\bamboo\logs
-criteres=+3d[*.log;*.trc] +3w[PY*.tmp]
+[:default]
+tracefile=c:\tools\cleanlogs\logs\cleanlog%year%%dayofyear%.log
+options=plat,force,execute
 
-[\\ssiegebabs01\bamboo\logs]
-criteres=+3d[*.log;*.trc] +3w[PY*.tmp]
+[:override]
+;options=simulation,confirmation,noreadonly
 
-[\\ssiegebabs10\bamboo\logs]
-criteres=+3d[*.log;*.trc] +3w[PY*.tmp]
-tracefile=\\ssiegebabs01\bamboo\logs
-option=recursif|plat
+[c:\tools\cleanlogs\logs]
+criteres=(m)+3d[*.trc] (m)+1d[*.log;*.tst]
+options=plat,force,execute,includereadonly
 
-‚volutions :
-Possibilit‚ de s‚lectionner les r‚pertoires avec masque.
-On pourrait ainsi faire le Menage dans les r‚pertoires temporaire
-de la maniŠre suivante :
+[C:\Users\users\AppData\Local\Temp]
+criteres=(m)+8y[*.manifest;*.intr;*.tst]
+
+Evolutions :
+Possibilite de selectionner les repertoires avec masque.
+On pourrait ainsi faire le Menage dans les repertoires temporaire
+de la maniere suivante :
 [\\ssiegebabs01\c$\*\temp]
 [\\ssiegebabs01\c$\documents and settings\*\temp]
 
@@ -43,7 +45,7 @@ program cleanlogs;
 
 {$APPTYPE CONSOLE}
 { DONE 5 -oMarc -cOptions : Tester la r‚cursivit‚ et la mettre en place. }
-{ DONE 5 -oMarc -cSection [override] Qui permet de forcer un mode simulation par exemple 
+{ DONE 5 -oMarc -cSection [override] Qui permet de forcer un mode simulation par exemple
                   en cours. Reste le problŠme des options partielle. Actuellement tout ou rien
                   il faudrait savoir si on a ou pas l'option (0,1,2,3) sur deux bits }
 { TODO 5 -oMarc -cAjout de TryRmSubDir }
@@ -97,6 +99,7 @@ var
   Forced : Byte;
   lError : Integer;
   NbFiles : integer;
+  FileAttr : Longint;
 
 function LoadFiles(Path : string; Spec : string) : integer;
 var SRec: TSearchRec;
@@ -121,13 +124,14 @@ begin
   begin
     repeat
       MonFichier := tFichier.Create(Srec);
-//      writeln('trouv‚:'+Srec.name);
+      // writeln('trouve:'+Srec.name);
       if WorkCrit.AcceptFile(MonFichier) then
       begin
         MaListe.Add(MonFichier);
         MonFichier.Path := Path;
         Taille := Taille + MonFichier.FileSize;
         Inc(Result);
+        // writeln('Accepted : '+Path)
       end
       else
         MonFichier.Free;
@@ -180,9 +184,18 @@ begin
     Append(Fichier);
     InnerLog;
   except
-    Assign(Fichier,TraceF);
-    Rewrite(Fichier);
-    InnerLog;
+    try
+      Assign(Fichier,TraceF);
+      Rewrite(Fichier);
+      InnerLog;
+    except
+      on E : Exception do
+      begin
+        writeln(E.ClassName+' error raised, with message : '+E.Message);
+        writeln('Impossible de creer le fichier trace '+TraceF+'. Verifiez le chemin svp.');
+        raise;
+      end;
+    end;
   end;
   TraceSt.Clear;
 end;
@@ -208,8 +221,8 @@ begin
   TraceSt := TStringList.Create;
   try
     write('cleanlogs - Nettoyage periodique des fichiers traces. ');
-    writeln('V1.05');
-    writeln('            Marc Chauffour - Dec. 2011');
+    writeln('V1.06');
+    writeln('            Marc Chauffour - Oct. 2018');
     writeln;
     Assign(Output,'');
     Rewrite(Output);
@@ -217,7 +230,7 @@ begin
 	begin
       GiveHelp();
 	  Halt(1);
-	end  
+	end
     else
     begin
       default := nil;
@@ -225,15 +238,15 @@ begin
         Sections := TStringList.Create();
         try
           Inif := TIniFile.Create(ParamStr(1));
-          
+
           inif.ReadSectionValues(DefaultSection,Sections);
           Default := tTask.Create;
           LoadIniData(default,Sections);
-          
+
           inif.ReadSectionValues(OverrideSection,Sections);
           over := tTask.Create;
           LoadIniData(over,Sections);
-          
+
           inif.ReadSections(Sections);
           Indice := 0;
           while Indice<Sections.Count do
@@ -309,13 +322,26 @@ begin
             try
               if workTask.OptionsSet[opForce] or CheckForce then
               begin
+                if workTask.OptionsSet[opReadonly] Then
+                begin
+                  FileAttr := FileGetAttr(pchar(MonFichier.Path+'\'+MonFichier.FileName));
+                  if (FileAttr and faReadOnly) <> 0 then
+                  begin
+                    if FileSetAttr(pchar(MonFichier.Path+'\'+MonFichier.FileName),FileAttr and not faReadOnly) = -1 Then
+                    begin
+                      lError := GetLastError;
+                      EtatTrt := '!('+IntToStr(lError)+')-'+SysErrorMessage(lError)+'! unable to remove ReadOnly !';
+  				            ErrorFound := True;
+                    end;
+                  end;
+                end;
                 if DeleteFile(pchar(MonFichier.Path+'\'+MonFichier.FileName)) then
                   EtatTrt := 'SUPPRIME'
                 else
                 begin
                   lError := GetLastError;
                   EtatTrt := '!('+IntToStr(lError)+')-'+SysErrorMessage(lError)+'!';
-				  ErrorFound := True;
+				          ErrorFound := True;
                 end;
               end
               else
