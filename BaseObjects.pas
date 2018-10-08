@@ -24,7 +24,7 @@ var
 Type
   tKindAccess = (kaCreated, kaAccessed, kaModified);
   tKindPeriod = (kpDay, kpWeek, kpMonth, kpYear);
-  tTaillePLancher = (Kilo=1024, Mega=1024*1024, Tera=1024*1024*1024);
+  tTaillePLancher = (Kilo=1024, Mega=1024*1024, Giga=1024*1024*1024);
   tOptions = (opRecursif,opExecute,opForce,opReadonly);
   tPredefinedV = (opTimeStmp, opDate, opHeure, opQuantieme, opJour, opMois, OpAnnee);
 
@@ -210,9 +210,9 @@ end;
 
 function tFichier.GetTailleToString: string;
 begin
-  if FileSize>Ord(Tera) then
-    Result := IntToStr(FileSize div Ord(Tera))+','+
-              IntToStr((FileSize mod Ord(Tera)) div Ord(Mega))+'TiB'
+  if FileSize>Ord(Giga) then
+    Result := IntToStr(FileSize div Ord(Giga))+','+
+              IntToStr((FileSize mod Ord(Giga)) div Ord(Mega))+'GiB'
   else if FileSize>Ord(Mega) then
     Result := IntToStr(FileSize div Ord(Mega))+','+
               IntToStr((FileSize mod Ord(Mega)) div Ord(Kilo))+'MiB'

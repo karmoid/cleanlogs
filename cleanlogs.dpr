@@ -221,7 +221,7 @@ begin
   TraceSt := TStringList.Create;
   try
     write('cleanlogs - Nettoyage periodique des fichiers traces. ');
-    writeln('V1.06');
+    writeln('V1.07');
     writeln('            Marc Chauffour - Oct. 2018');
     writeln;
     Assign(Output,'');
